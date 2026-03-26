@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 
@@ -6,22 +7,26 @@ FATOR_ENERGIA = 0.09 # kg CO2e por kWh
 FATOR_AGUA = 0.40 # kg CO2e por m³
 
 
-@app.get("/")
-def home():
-    return {"status": "Monitor de Impacto Ambiental Ativo"}
+class RegistroConsumo(BaseModel):
+    empresa: str = Field(..., description="Nome da empresa")
+    kwh: float = Field(..., gt=0, description="Consumo de energia em kWh")
+    m3: float = Field(..., gt=0, description="Consumo de água em m³")
 
-@app.get("/calcular")
+
+@app.post("/calcular")
 def calcular_impacto(
-    kwh: float = Query(gt=0, description="Consumo de energia em kWh"),
-    m3: float = Query(gt=0, description="Consumo de água em m³")
+    dados: RegistroConsumo
 ):
-    co2_energia = kwh * FATOR_ENERGIA
-    co2_agua = m3 * FATOR_AGUA
+    co2_energia = dados.kwh * FATOR_ENERGIA
+    co2_agua = dados.m3 * FATOR_AGUA
     co2_total = round(co2_energia + co2_agua, 2)
     
     return {
-        "consumo_de_energia": kwh,
-        "consumo_de_água": m3,
-        "emissão_total_de_co2": co2_total, 
-        "mensagem": "Calculado o impacto ambiental com base no consumo de energia e água."
+        "empresa": dados.empresa,
+        "detalhes": {
+            "energia_kg_co2": round(co2_energia, 2),
+            "agua_kg_co2": round(co2_agua, 2)
+        },
+        "impacto_total": f"{co2_total} kg CO2",
+        "status": "Processamento concluído via Schema Pydantic"
     }

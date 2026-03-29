@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -30,3 +32,14 @@ def calcular_impacto(
         "impacto_total": f"{co2_total} kg CO2",
         "status": "Processamento concluído via Schema Pydantic"
     }
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):  
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "mensagem_de_erro": "Dados de entrada inválidos. Verifique os campos e tente novamente.",
+            "ajuda": "Certifique-se de que 'empresa' é uma string, 'kwh' e 'm3' são números positivos.",
+            "detalhes": exc.errors()
+            },
+    )

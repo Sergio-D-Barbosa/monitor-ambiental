@@ -2,35 +2,40 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
+from typing import List
 
 app = FastAPI()
 
 FATOR_ENERGIA = 0.09 # kg CO2e por kWh 
 FATOR_AGUA = 0.40 # kg CO2e por m³
 
-
 class RegistroConsumo(BaseModel):
     empresa: str = Field(..., description="Nome da empresa")
     kwh: float = Field(..., gt=0, description="Consumo de energia em kWh")
     m3: float = Field(..., gt=0, description="Consumo de água em m³")
 
-
 @app.post("/calcular")
-def calcular_impacto(
-    dados: RegistroConsumo
-):
-    co2_energia = dados.kwh * FATOR_ENERGIA
-    co2_agua = dados.m3 * FATOR_AGUA
-    co2_total = round(co2_energia + co2_agua, 2)
+def calcular_impacto(lista_dados: List[RegistroConsumo]):
+    resultados_individuais = []
+    total_co2_acumulado = 0.0 
+
+    for registro in lista_dados:
+        emissao_k = registro.kwh * FATOR_ENERGIA
+        emissao_m = registro.m3 * FATOR_AGUA
+        impacto_item = round(emissao_k + emissao_m, 2)
+        
+        total_co2_acumulado += impacto_item
+        
+        resultados_individuais.append({
+            "empresa": registro.empresa,
+            "impacto_kg_co2": impacto_item
+        })
     
     return {
-        "empresa": dados.empresa,
-        "detalhes": {
-            "energia_kg_co2": round(co2_energia, 2),
-            "agua_kg_co2": round(co2_agua, 2)
-        },
-        "impacto_total": f"{co2_total} kg CO2",
-        "status": "Processamento concluído via Schema Pydantic"
+        "resumo_por_empresa": resultados_individuais,
+        "impacto_total_do_lote": f"{round(total_co2_acumulado, 2)} kg CO2",
+        "total_de_empresas_processadas": len(lista_dados),
+        "status": "Processamento em lote concluído."
     }
 
 @app.exception_handler(RequestValidationError)

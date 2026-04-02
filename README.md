@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Banner Monitoramento Ambiental" width="70%">
+  <img src="assets/banner.png" alt="Banner Monitoramento Ambiental" width="100%">
 </p>
 
 # Monitoramento Ambiental - API de CO2

@@ -1,4 +1,8 @@
-# Monitor Ambiental
+<p align="center">
+  <img src="assets/banner.png" alt="Banner Monitoramento Ambiental" width="70%">
+</p>
+
+# Monitoramento Ambiental - API de CO2
 
 
 
